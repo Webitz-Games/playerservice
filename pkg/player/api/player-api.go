@@ -12,8 +12,8 @@ type Player struct {
 }
 
 type PlayerConfig struct {
-	Name     string `json:"name"`
-	Password string `json:"password"`
+	PlayerName string `json:"player_name"`
+	Password   string `json:"password"`
 }
 
 type PlayerRequestHandlers interface {
@@ -26,11 +26,11 @@ func (p Player) Validate() error {
 	if p.Name == "" {
 		return NewInvalidErr("player name cannot be empty")
 	}
-	return nil
+	return p.PlayerConfig.Validate()
 }
 
 func (pc *PlayerConfig) Validate() error {
-	if pc.Name == "" {
+	if pc.PlayerName == "" {
 		return NewInvalidErr("player name cannot be empty")
 	}
 	if pc.Password == "" {
