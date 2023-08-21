@@ -3,6 +3,8 @@ package constants
 const (
 	Separator             = "_"
 	ActionCreatePlayer    = "create_player"
+	ActionDeletePlayer    = "delete_player"
+	ActionUpdatePlayer    = "update_player"
 	UnableToWriteResponse = 99
 
 	InternalServerError         = 20000

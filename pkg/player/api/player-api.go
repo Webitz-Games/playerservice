@@ -3,7 +3,8 @@ package api
 import "github.com/emicklei/go-restful/v3"
 
 const (
-	playerRoutePath = "/player"
+	playerRoutePath     = "/players"
+	playerPathParameter = "player"
 )
 
 type Player struct {
@@ -40,11 +41,11 @@ func (pc *PlayerConfig) Validate() error {
 }
 
 type DeletePlayerHandler interface {
-	HandleDeletePlayer() error
+	HandleDeletePlayer(playerName string) error
 }
 
 type UpdatePlayerHandler interface {
-	HandleUpdatePlayer() error
+	HandleUpdatePlayer(player Player) error
 }
 
 type CreatePlayerHandler interface {
@@ -53,4 +54,7 @@ type CreatePlayerHandler interface {
 
 func addPlayerRoutes(webservice *restful.WebService, handlers PlayerRequestHandlers) {
 	addPlayerCreateRoute(webservice, handlers)
+	addPlayerDeleteRoute(webservice, handlers)
+	addPlayerUpdateRoute(webservice, handlers)
+
 }

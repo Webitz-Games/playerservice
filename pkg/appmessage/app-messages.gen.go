@@ -15,4 +15,5 @@ const (
 	EIDTokenIsNotUserToken         = 20022
 
 	EIDCreatePlayerSuccess = 520000
+	EIDGetPlayerSuccess    = 520004
 )

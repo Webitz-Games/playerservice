@@ -4,6 +4,18 @@ import "fmt"
 
 var ErrConflict = NewErrResourceConflict("", "")
 
+type ErrNotFound struct {
+	Msg string
+}
+
+func (e *ErrNotFound) Error() string {
+	return fmt.Sprintf("a matching resource was not found: %s", e.Msg)
+}
+
+func NewErrNotFound(msg string) *ErrNotFound {
+	return &ErrNotFound{Msg: msg}
+}
+
 type ErrInvalidRequest struct {
 	Msg string
 }

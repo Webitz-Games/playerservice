@@ -70,9 +70,9 @@ func Write(request *restful.Request, response *restful.Response, httpStatusCode 
 				ErrorCode:    constants.UnableToWriteResponse,
 				ErrorMessage: "unable to write response: " + err.Error(),
 			})
+		logrus.Error(err)
 		return
 	}
-	logrus.Error(err)
 }
 
 func WriteError(
