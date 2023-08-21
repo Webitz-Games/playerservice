@@ -7,12 +7,12 @@ import (
 
 type Config struct {
 	Port     string `env:"SERVER_PORT" envDocs:"The port which the service will listen to" envDefault:"8080"`
-	BasePath string `env:"SERVER_BASE_PATH" envDocs:"The base path of this service" envDefault:"/player"`
+	BasePath string `env:"SERVER_BASE_PATH" envDocs:"The base path of this service" envDefault:"/player-service"`
 
 	MongoURL            string `env:"MONGO_URL" envDocs:"mongo url" envDefault:"mongodb://localhost:27017"`
 	MongoUserName       string `env:"MONGO_USER_NAME" envDocs:"mongo user name"`
 	MongoPassword       string `env:"MONGO_PASSWORD" envDocs:"mongo password"`
-	MongoDatabase       string `env:"MONGO_DB" envDocs:"Mongo Database name" envDefault:"player"`
+	MongoDatabase       string `env:"MONGO_DB" envDocs:"Mongo Database name" envDefault:"player-service"`
 	MongoContextTimeout int    `env:"CONTEXT_TIMEOUT_DURATION" envDocs:"context timeout duration, unit second" envDefault:"10"`
 }
 

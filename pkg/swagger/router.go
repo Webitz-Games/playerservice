@@ -23,7 +23,7 @@ func CreateSwagger(basePath string, serviceName string, version string) *restful
 	}
 
 	http.Handle(basePath+"/apidocs/",
-		http.StripPrefix(basePath+"/apidocs/", http.FileServer(http.Dir("contents/swagger-ui"))))
+		http.StripPrefix(basePath+"/apidocs/", http.FileServer(http.Dir("player/docs/swagger.json"))))
 
 	return restfulspec.NewOpenAPIService(swaggerConfig)
 }

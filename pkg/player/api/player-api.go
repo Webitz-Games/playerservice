@@ -12,8 +12,8 @@ type Player struct {
 }
 
 type PlayerConfig struct {
-	Name     string
-	Password string
+	Name     string `json:"name"`
+	Password string `json:"password"`
 }
 
 type PlayerRequestHandlers interface {

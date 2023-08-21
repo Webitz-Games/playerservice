@@ -10,14 +10,14 @@ type RequestHandlers interface {
 }
 
 func RegisterRoutes(basePath string, serviceName string, handlers RequestHandlers) {
-	restful.DefaultContainer.Add(AddRoutes(serviceName, handlers))
+	restful.DefaultContainer.Add(AddRoutes(basePath, serviceName, handlers))
 	restful.DefaultContainer.Add(swagger.CreateSwagger(basePath, serviceName, "0.0.1"))
 }
 
-func AddRoutes(serviceName string, handlers RequestHandlers) *restful.WebService {
+func AddRoutes(basePath, serviceName string, handlers RequestHandlers) *restful.WebService {
 	webservice := new(restful.WebService)
 	webservice.
-		Path("webitz/player/api").
+		Path(basePath + "/api").
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON).
 		Doc(serviceName).
