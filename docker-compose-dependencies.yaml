@@ -1,0 +1,12 @@
+version: '3'
+services:
+  mongo:
+    image: mongo:5
+    command: "--bind_ip_all --replSet rs0"
+    hostname: 127.0.0.1 # needed to connect from local dev machine when running with a replica set
+    restart: always
+    ports:
+      - 27017:27017
+    healthcheck:
+      test: test $$(echo "rs.initiate().ok || rs.status().ok" | mongo --quiet) -eq 1
+      interval: 10s

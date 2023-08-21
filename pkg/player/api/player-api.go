@@ -48,7 +48,7 @@ type UpdatePlayerHandler interface {
 }
 
 type CreatePlayerHandler interface {
-	HandleCreatePlayer() error
+	HandleCreatePlayer(player Player) error
 }
 
 func addPlayerRoutes(webservice *restful.WebService, handlers PlayerRequestHandlers) {

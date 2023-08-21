@@ -48,7 +48,7 @@ func bindCreatePlayerHandler(handler CreatePlayerHandler) restful.RouteFunction 
 			return
 		}
 
-		handler.HandleCreatePlayer()
+		handler.HandleCreatePlayer(newPlayer)
 
 		response.Write(req, resp, http.StatusCreated, appmessage.EIDCreatePlayerSuccess, "created player")
 	}

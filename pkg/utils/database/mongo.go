@@ -28,7 +28,7 @@ func NewMongoClient(config *config.Config) (*mongo.Client, error) {
 
 	mongoClient, err := mongo.Connect(ctx, opts)
 	if err != nil {
-		logrus.Error("unable to connec to MongoDB: ", err)
+		logrus.Error("unable to connect to MongoDB: ", err)
 		return nil, err
 	}
 

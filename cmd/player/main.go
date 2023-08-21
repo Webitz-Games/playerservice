@@ -53,7 +53,7 @@ func main() {
 
 func createService(configuration *config.Config, mongoClient *mongo.Client) *service.PlayerService {
 
-	requestHandlers := requesthandlers.MakeRequestHandlers(mongoClient)
+	requestHandlers := requesthandlers.MakeRequestHandlers(mongoClient, configuration)
 	return service.New(configuration, serviceName, requestHandlers)
 }
 
