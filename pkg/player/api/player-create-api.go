@@ -20,7 +20,7 @@ func addPlayerCreateRoute(webservice *restful.WebService, handler CreatePlayerHa
 			Notes(heredoc.Doc(`
 				Creates a new Player
 			`)).
-			Reads(Player{}).
+			Reads(PlayerCreateRequest{}).
 			Returns(http.StatusCreated, http.StatusText(http.StatusCreated), nil).
 			Returns(http.StatusBadRequest, http.StatusText(http.StatusBadRequest), response.Error{}))
 }
@@ -30,8 +30,8 @@ func bindCreatePlayerHandler(handler CreatePlayerHandler) restful.RouteFunction 
 		action := constants.ActionCreatePlayer
 		additionalMessage := make(map[string]string)
 
-		var newPlayer Player
-		err := req.ReadEntity(&newPlayer)
+		var newPlayerCreateRequest PlayerCreateRequest
+		err := req.ReadEntity(&newPlayerCreateRequest)
 		if err != nil {
 			errorCode := appmessage.EIDUnableToParseRequestBody
 			errorMessage := response.ConstructErrorMessage(action, constants.ErrorCodeMapping[errorCode], additionalMessage)
@@ -40,7 +40,7 @@ func bindCreatePlayerHandler(handler CreatePlayerHandler) restful.RouteFunction 
 			return
 		}
 
-		err = newPlayer.Validate()
+		err = newPlayerCreateRequest.Validate()
 		if err != nil {
 			errorCode := appmessage.EIDValidationError
 			errorMessage := response.ConstructErrorMessage(action, constants.ErrorCodeMapping[errorCode], additionalMessage)
@@ -49,7 +49,7 @@ func bindCreatePlayerHandler(handler CreatePlayerHandler) restful.RouteFunction 
 			return
 		}
 
-		playerResponse, err := handler.HandleCreatePlayer(newPlayer)
+		playerResponse, err := handler.HandleCreatePlayer(newPlayerCreateRequest)
 		if err != nil {
 			var conflictErr *ErrResourceConflict
 			switch {

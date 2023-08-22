@@ -23,7 +23,7 @@ func addPlayerUpdateRoute(webservice *restful.WebService, handler UpdatePlayerHa
 			Notes(heredoc.Doc(`
 				Updates a Player
 			`)).
-			Reads(PlayerConfig{}).
+			Reads(Player{}).
 			Returns(http.StatusCreated, http.StatusText(http.StatusCreated), Player{}).
 			Returns(http.StatusBadRequest, http.StatusText(http.StatusBadRequest), response.Error{}).
 			Returns(http.StatusNotFound, http.StatusText(http.StatusForbidden), response.Error{}).
@@ -34,11 +34,11 @@ func bindUpdatePlayerHandler(handler UpdatePlayerHandler) restful.RouteFunction 
 	return func(req *restful.Request, resp *restful.Response) {
 		action := constants.ActionUpdatePlayer
 		additionalMessage := make(map[string]string)
-		var playerConfig PlayerConfig
+		var player Player
 
 		playerID := req.PathParameter(playerPathParameter)
 
-		err := req.ReadEntity(&playerConfig)
+		err := req.ReadEntity(&player)
 		if err != nil {
 			errorCode := appmessage.EIDUnableToParseRequestBody
 			errorMessage := response.ConstructErrorMessage(action, constants.ErrorCodeMapping[errorCode], additionalMessage)
@@ -47,7 +47,8 @@ func bindUpdatePlayerHandler(handler UpdatePlayerHandler) restful.RouteFunction 
 			return
 		}
 
-		err = playerConfig.Validate()
+		player.PlayerID = playerID
+		err = player.Validate()
 		if err != nil {
 			errorCode := appmessage.EIDValidationError
 			errorMessage := response.ConstructErrorMessage(action, constants.ErrorCodeMapping[errorCode], additionalMessage)
@@ -56,10 +57,6 @@ func bindUpdatePlayerHandler(handler UpdatePlayerHandler) restful.RouteFunction 
 			return
 		}
 
-		player := Player{
-			PlayerID:     playerID,
-			PlayerConfig: playerConfig,
-		}
 		err = handler.HandleUpdatePlayer(player)
 		if err != nil {
 			var notFoundErr *ErrNotFound

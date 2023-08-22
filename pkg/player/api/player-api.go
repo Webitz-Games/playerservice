@@ -5,21 +5,33 @@ import "github.com/emicklei/go-restful/v3"
 const (
 	playerRoutePath     = "/players"
 	playerPathParameter = "player"
+	loginPathParameter  = "login"
 )
 
-type Player struct {
-	PlayerID string `bson:"_id"`
-	PlayerConfig
+type PlayerLoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-type PlayerConfig struct {
+type PlayerLoginResponse struct {
+	Player Player
+}
+
+type Player struct {
+	PlayerID   string `bson:"_id"`
 	PlayerName string `json:"name"`
 	Email      string `json:"email"`
 	Password   string `json:"password"`
-	Token      string `json:"token"`
+	SessionID  string `json:"sessionID"`
 }
 
-type PlayerResponse struct {
+type PlayerCreateRequest struct {
+	PlayerName string `json:"name"`
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+}
+
+type PlayerCreateResponse struct {
 	PlayerID string `json:"playerID"`
 }
 
@@ -30,23 +42,34 @@ type PlayerRequestHandlers interface {
 	LoginPlayerHandler
 }
 
-//func (p Player) Validate() error {
-//	if p.PlayerID == "" {
-//		return NewInvalidErr("player name cannot be empty")
-//	}
-//	return p.PlayerConfig.Validate()
-//}
-
-func (pc *PlayerConfig) Validate() error {
-	if pc.Email == "" {
+func (lr *PlayerLoginRequest) Validate() error {
+	if lr.Email == "" {
 		return NewInvalidErr("email cannot be empty")
 	}
-	if pc.PlayerName == "" {
-		return NewInvalidErr("player name cannot be empty")
+	if lr.Password == "" {
+		return NewInvalidErr("player password cannot be empty")
+	}
+	return nil
+}
+
+func (p Player) Validate() error {
+	if p.PlayerID == "" {
+		return NewInvalidErr("player id cannot be empty")
+	}
+	return nil
+}
+
+func (pc *PlayerCreateRequest) Validate() error {
+	if pc.Email == "" {
+		return NewInvalidErr("email cannot be empty")
 	}
 	if pc.Password == "" {
 		return NewInvalidErr("player password cannot be empty")
 	}
+	if pc.PlayerName == "" {
+		return NewInvalidErr("player name cannot be empty")
+	}
+
 	return nil
 }
 
@@ -59,11 +82,11 @@ type UpdatePlayerHandler interface {
 }
 
 type CreatePlayerHandler interface {
-	HandleCreatePlayer(player Player) (PlayerResponse, error)
+	HandleCreatePlayer(playerCreateRequest PlayerCreateRequest) (PlayerCreateResponse, error)
 }
 
 type LoginPlayerHandler interface {
-	HandlePlayerLogin(player PlayerConfig) error
+	HandlePlayerLogin(loginRequest PlayerLoginRequest) (PlayerLoginResponse, error)
 }
 
 func addPlayerRoutes(webservice *restful.WebService, handlers PlayerRequestHandlers) {

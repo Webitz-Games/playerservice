@@ -14,6 +14,7 @@ import (
 	"playerapi/pkg/player/api"
 	"playerapi/pkg/player/requesthandlers"
 	"playerapi/pkg/service"
+	"playerapi/pkg/session"
 	"playerapi/pkg/utils/database"
 )
 
@@ -52,8 +53,8 @@ func main() {
 }
 
 func createService(configuration *config.Config, mongoClient *mongo.Client) *service.PlayerService {
-
-	requestHandlers := requesthandlers.MakeRequestHandlers(mongoClient, configuration)
+	sessionService := session.New(mongoClient, configuration)
+	requestHandlers := requesthandlers.MakeRequestHandlers(mongoClient, configuration, sessionService)
 	return service.New(configuration, serviceName, requestHandlers)
 }
 

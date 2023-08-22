@@ -16,4 +16,5 @@ const (
 
 	EIDCreatePlayerSuccess = 520000
 	EIDGetPlayerSuccess    = 520004
+	EIDPlayerLoginSuccess  = 520005
 )

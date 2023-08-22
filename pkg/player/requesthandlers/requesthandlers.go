@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"playerapi/pkg/config"
 	"playerapi/pkg/player/api"
+	"playerapi/pkg/session"
 	"playerapi/pkg/utils"
 )
 
@@ -18,29 +19,33 @@ const (
 type PlayerServiceRequestHandlers struct {
 	mongoClient *mongo.Client
 	config      *config.Config
+	session     session.SessionService
 }
 
-func MakeRequestHandlers(mongoClient *mongo.Client, config *config.Config) PlayerServiceRequestHandlers {
-	return PlayerServiceRequestHandlers{mongoClient: mongoClient, config: config}
+func MakeRequestHandlers(mongoClient *mongo.Client, config *config.Config, session session.SessionService) PlayerServiceRequestHandlers {
+	return PlayerServiceRequestHandlers{mongoClient: mongoClient, config: config, session: session}
 }
 
-func (p PlayerServiceRequestHandlers) HandleCreatePlayer(player api.Player) (api.PlayerResponse, error) {
+func (p PlayerServiceRequestHandlers) HandleCreatePlayer(playerCreateRequest api.PlayerCreateRequest) (api.PlayerCreateResponse, error) {
 
-	var result api.Player
-	var playerResponse api.PlayerResponse
-	filter := bson.D{{Key: "playerconfig.email", Value: player.Email}}
+	var newPlayer api.Player
+	var playerResponse api.PlayerCreateResponse
+	filter := bson.D{{Key: "email", Value: playerCreateRequest.Email}}
 	singleResult := p.mongoClient.Database(p.config.MongoDatabase).Collection(playerCollectionPrefix).FindOne(context.Background(), filter)
-	err := singleResult.Decode(&result)
+	err := singleResult.Decode(&newPlayer)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			player.PlayerID = utils.GenerateUUID()
-			_, err = p.mongoClient.Database(p.config.MongoDatabase).Collection(playerCollectionPrefix).InsertOne(context.Background(), player)
-			logrus.WithField("id", player.PlayerID).Info("player created")
-			playerResponse.PlayerID = player.PlayerID
+			newPlayer.PlayerID = utils.GenerateUUID()
+			newPlayer.PlayerName = playerCreateRequest.PlayerName
+			newPlayer.Email = playerCreateRequest.Email
+			newPlayer.Password = playerCreateRequest.Password
+			_, err = p.mongoClient.Database(p.config.MongoDatabase).Collection(playerCollectionPrefix).InsertOne(context.Background(), newPlayer)
+			logrus.WithField("id", newPlayer.PlayerID).Info("player created")
+			playerResponse.PlayerID = newPlayer.PlayerID
 			return playerResponse, nil
 		}
 	}
-	logrus.WithField("email", player.Email).Warning("failed to create player because an email already exists")
+	logrus.WithField("email", playerCreateRequest.Email).Warning("failed to create player because an email already exists")
 	return playerResponse, api.ErrConflict
 }
 
@@ -79,11 +84,39 @@ func (p PlayerServiceRequestHandlers) HandleDeletePlayer(playerID string) error 
 	return nil
 }
 
-func (p PlayerServiceRequestHandlers) HandlePlayerLogin(playerConfig api.PlayerConfig) error {
+func (p PlayerServiceRequestHandlers) HandlePlayerLogin(loginRequest api.PlayerLoginRequest) (api.PlayerLoginResponse, error) {
+	var response api.PlayerLoginResponse
+	player, err := p.getPlayer(loginRequest.Email)
+	if err != nil {
+		return response, err
+	}
 
-	return nil
+	if player.Password != loginRequest.Password {
+		return response, api.NewInvalidErr("password did not match")
+	}
+
+	sessionID, err := p.session.CreateSession(player)
+	if err != nil {
+		return api.PlayerLoginResponse{}, err
+	}
+
+	player.SessionID = sessionID
+	response.Player = player
+
+	return response, nil
 }
 
-func (p PlayerServiceRequestHandlers) GetPlayer(playerName string) {
+func (p PlayerServiceRequestHandlers) getPlayer(email string) (api.Player, error) {
+	var result api.Player
+	filter := bson.D{{"email", email}}
+	singleResult := p.mongoClient.Database(p.config.MongoDatabase).Collection(playerCollectionPrefix).FindOne(context.Background(), filter)
+	err := singleResult.Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			logrus.WithField("email", email).Warning("failed to find user email")
+			return result, err
+		}
+	}
 
+	return result, nil
 }
