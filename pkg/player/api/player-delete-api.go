@@ -15,7 +15,7 @@ func addPlayerDeleteRoute(webservice *restful.WebService, handler DeletePlayerHa
 	webservice.
 		Route(webservice.DELETE(playerRoutePath+"/{"+playerPathParameter+"}").
 			Param(webservice.
-				PathParameter(playerPathParameter, "Name of the player").
+				PathParameter(playerPathParameter, "ID of the player").
 				DataType("string").Required(true)).
 			To(bindDeletePlayerHandler(handler)).
 			Operation("DeletePlayer").
@@ -33,9 +33,9 @@ func bindDeletePlayerHandler(handler DeletePlayerHandler) restful.RouteFunction 
 		action := constants.ActionDeletePlayer
 		additionalMessage := make(map[string]string)
 
-		playerName := req.PathParameter(playerPathParameter)
+		playerID := req.PathParameter(playerPathParameter)
 
-		err := handler.HandleDeletePlayer(playerName)
+		err := handler.HandleDeletePlayer(playerID)
 		if err != nil {
 			var notFoundErr *ErrNotFound
 			switch {

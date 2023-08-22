@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"github.com/MakeNowJust/heredoc"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/sirupsen/logrus"
@@ -48,8 +49,25 @@ func bindCreatePlayerHandler(handler CreatePlayerHandler) restful.RouteFunction 
 			return
 		}
 
-		handler.HandleCreatePlayer(newPlayer)
+		playerResponse, err := handler.HandleCreatePlayer(newPlayer)
+		if err != nil {
+			var conflictErr *ErrResourceConflict
+			switch {
+			case errors.As(err, &conflictErr):
+				errorCode := appmessage.EIDValidationError
+				errorMessage := response.ConstructErrorMessage(action, constants.ErrorCodeMapping[errorCode], additionalMessage)
+				logrus.Error(errorMessage)
+				response.RespondError(req, resp, errorCode, http.StatusConflict, action, additionalMessage, err)
+				return
+			default:
+				errorCode := appmessage.EIDInternalServerError
+				errorMessage := response.ConstructErrorMessage(action, constants.ErrorCodeMapping[errorCode], additionalMessage)
+				logrus.Error(errorMessage)
+				response.RespondError(req, resp, errorCode, http.StatusInternalServerError, action, additionalMessage, err)
+				return
+			}
+		}
 
-		response.Write(req, resp, http.StatusCreated, appmessage.EIDCreatePlayerSuccess, "created player")
+		response.Write(req, resp, http.StatusCreated, appmessage.EIDCreatePlayerSuccess, playerResponse)
 	}
 }

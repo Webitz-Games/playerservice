@@ -15,7 +15,7 @@ func addPlayerUpdateRoute(webservice *restful.WebService, handler UpdatePlayerHa
 	webservice.
 		Route(webservice.PUT(playerRoutePath+"/{"+playerPathParameter+"}").
 			Param(webservice.
-				PathParameter(playerPathParameter, "Name of the player").
+				PathParameter(playerPathParameter, "PlayerID of the player").
 				DataType("string").Required(true)).
 			To(bindUpdatePlayerHandler(handler)).
 			Operation("UpdatePlayer").
@@ -34,10 +34,10 @@ func bindUpdatePlayerHandler(handler UpdatePlayerHandler) restful.RouteFunction 
 	return func(req *restful.Request, resp *restful.Response) {
 		action := constants.ActionUpdatePlayer
 		additionalMessage := make(map[string]string)
-
-		playerName := req.PathParameter(playerPathParameter)
-
 		var playerConfig PlayerConfig
+
+		playerID := req.PathParameter(playerPathParameter)
+
 		err := req.ReadEntity(&playerConfig)
 		if err != nil {
 			errorCode := appmessage.EIDUnableToParseRequestBody
@@ -57,7 +57,7 @@ func bindUpdatePlayerHandler(handler UpdatePlayerHandler) restful.RouteFunction 
 		}
 
 		player := Player{
-			Name:         playerName,
+			PlayerID:     playerID,
 			PlayerConfig: playerConfig,
 		}
 		err = handler.HandleUpdatePlayer(player)

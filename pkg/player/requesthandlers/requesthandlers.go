@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"playerapi/pkg/config"
 	"playerapi/pkg/player/api"
+	"playerapi/pkg/utils"
 )
 
 const (
@@ -23,52 +24,66 @@ func MakeRequestHandlers(mongoClient *mongo.Client, config *config.Config) Playe
 	return PlayerServiceRequestHandlers{mongoClient: mongoClient, config: config}
 }
 
-func (p PlayerServiceRequestHandlers) HandleCreatePlayer(player api.Player) error {
+func (p PlayerServiceRequestHandlers) HandleCreatePlayer(player api.Player) (api.PlayerResponse, error) {
 
-	_, err := p.mongoClient.Database(p.config.MongoDatabase).Collection(playerCollectionPrefix).InsertOne(context.Background(), player)
+	var result api.Player
+	var playerResponse api.PlayerResponse
+	filter := bson.D{{Key: "playerconfig.email", Value: player.Email}}
+	singleResult := p.mongoClient.Database(p.config.MongoDatabase).Collection(playerCollectionPrefix).FindOne(context.Background(), filter)
+	err := singleResult.Decode(&result)
 	if err != nil {
-		if mongo.IsDuplicateKeyError(err) {
-			logrus.WithField("player", player.Name).Warningf("failed to create player because that player name already exists")
-			return api.ErrConflict
+		if err == mongo.ErrNoDocuments {
+			player.PlayerID = utils.GenerateUUID()
+			_, err = p.mongoClient.Database(p.config.MongoDatabase).Collection(playerCollectionPrefix).InsertOne(context.Background(), player)
+			logrus.WithField("id", player.PlayerID).Info("player created")
+			playerResponse.PlayerID = player.PlayerID
+			return playerResponse, nil
 		}
-		logrus.WithField("player", player.Name).Errorf("failed to save to mongo %s", err)
-		return err
 	}
-
-	return nil
+	logrus.WithField("email", player.Email).Warning("failed to create player because an email already exists")
+	return playerResponse, api.ErrConflict
 }
 
 func (p PlayerServiceRequestHandlers) HandleUpdatePlayer(player api.Player) error {
 	opts := options.Update().SetUpsert(false)
-	filter := bson.D{{Key: "_id", Value: player.Name}}
+	filter := bson.D{{Key: "_id", Value: player.PlayerID}}
 	update := bson.D{{Key: "$set", Value: player}}
 
 	result, err := p.mongoClient.Database(p.config.MongoDatabase).Collection(playerCollectionPrefix).UpdateOne(context.Background(), filter, update, opts)
 	if err != nil {
-		logrus.WithField("player", player.Name).Errorf("failed to save to mongo %s", err)
+		logrus.WithField("id", player.PlayerID).Errorf("failed to save to mongo %s", err)
 		return err
 	}
 
 	if result.MatchedCount == 0 {
-		logrus.WithField("player", player.Name).Warningf("failed to find a player with the name %s to update", player.Name)
-		return api.NewErrNotFound("player with name " + player.Name)
+		logrus.WithField("player", player.PlayerName).Warningf("failed to find a player with the id %s to update", player.PlayerID)
+		return api.NewErrNotFound("player with id " + player.PlayerID)
 	}
 
 	return nil
 }
 
-func (p PlayerServiceRequestHandlers) HandleDeletePlayer(playerName string) error {
-	filter := bson.D{{Key: "_id", Value: playerName}}
+func (p PlayerServiceRequestHandlers) HandleDeletePlayer(playerID string) error {
+	filter := bson.D{{Key: "_id", Value: playerID}}
 	result, err := p.mongoClient.Database(p.config.MongoDatabase).Collection(playerCollectionPrefix).DeleteOne(context.Background(), filter)
 	if err != nil {
-		logrus.WithField("player", playerName).Errorf("failed to delete player %s, %s", playerName, err)
+		logrus.WithField("id", playerID).Errorf("failed to delete player %s, %s", playerID, err)
 		return err
 	}
 
 	if result.DeletedCount == 0 {
-		logrus.WithField("player", playerName).Errorf("failed to delete player %s, a matching resource was not found", playerName)
-		return api.NewErrNotFound("player with name " + playerName)
+		logrus.WithField("id", playerID).Errorf("failed to delete player %s, a matching resource was not found", playerID)
+		return api.NewErrNotFound("player with id " + playerID)
 	}
 
 	return nil
+}
+
+func (p PlayerServiceRequestHandlers) HandlePlayerLogin(playerConfig api.PlayerConfig) error {
+
+	return nil
+}
+
+func (p PlayerServiceRequestHandlers) GetPlayer(playerName string) {
+
 }
