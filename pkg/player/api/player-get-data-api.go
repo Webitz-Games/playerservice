@@ -20,7 +20,7 @@ func addPlayerGetDataRoute(webservice *restful.WebService, handler GetPlayerData
 			Notes(heredoc.Doc(`
 			Get data associated with the user
 		`)).
-			Reads(PlayerDataRequest{}).
+			Reads(PlayerDataGetRequest{}).
 			Returns(http.StatusCreated, http.StatusText(http.StatusCreated), nil).
 			Returns(http.StatusBadRequest, http.StatusText(http.StatusBadRequest), response.Error{}))
 }
@@ -30,7 +30,7 @@ func bindGetPlayerDataHandler(handler GetPlayerDataHandler) restful.RouteFunctio
 		action := constants.ActionGetPlayerData
 		additionalMessage := make(map[string]string)
 
-		var dataRequest PlayerDataRequest
+		var dataRequest PlayerDataGetRequest
 		err := req.ReadEntity(&dataRequest)
 		if err != nil {
 			errorCode := appmessage.EIDUnableToParseRequestBody

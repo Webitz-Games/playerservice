@@ -1,6 +1,8 @@
 package api
 
-import "github.com/emicklei/go-restful/v3"
+import (
+	"github.com/emicklei/go-restful/v3"
+)
 
 const (
 	playerRoutePath = "/players"
@@ -22,7 +24,7 @@ type Player struct {
 	PlayerName string `json:"name"`
 	Email      string `json:"email"`
 	Password   int    `json:"password"`
-	Data       PlayerData
+	Data       string `json:"data"`
 }
 
 type PlayerCreateRequest struct {
@@ -35,23 +37,19 @@ type PlayerCreateResponse struct {
 	PlayerID string `json:"playerID"`
 }
 
-type PlayerDataRequest struct {
+type PlayerDataGetRequest struct {
 	PlayerID  string `json:"playerID"`
 	SessionID string `json:"sessionID"`
 }
 
-type PlayerDataResponse struct {
-	Data PlayerData
-}
-
-type PlayerData struct {
-	Data interface{} `json:"data"`
+type PlayerDataGetResponse struct {
+	Data string `json:"data" bson:"data"`
 }
 
 type PlayerSaveDataRequest struct {
-	PlayerID  string      `json:"playerID"`
-	SessionID string      `json:"sessionID"`
-	Data      interface{} `json:"data"`
+	PlayerID  string `json:"playerID"`
+	SessionID string `json:"sessionID"`
+	Data      string `json:"data" bson:"data"`
 }
 
 type PlayerRequestHandlers interface {
@@ -64,13 +62,16 @@ type PlayerRequestHandlers interface {
 }
 
 func (d *PlayerSaveDataRequest) Validate() error {
-	if d.Data == nil {
-		return NewInvalidErr("data cannot be empty")
+	if d.SessionID == "" {
+		return NewInvalidErr("sessionID cannot be empty")
+	}
+	if d.PlayerID == "" {
+		return NewInvalidErr("playerID cannot be empty")
 	}
 	return nil
 }
 
-func (r *PlayerDataRequest) Validate() error {
+func (r *PlayerDataGetRequest) Validate() error {
 	if r.SessionID == "" {
 		return NewInvalidErr("sessionID cannot be empty")
 	}
@@ -128,7 +129,7 @@ type LoginPlayerHandler interface {
 }
 
 type GetPlayerDataHandler interface {
-	GetPlayerData(playerDataRequest PlayerDataRequest) (PlayerDataResponse, error)
+	GetPlayerData(playerDataRequest PlayerDataGetRequest) (PlayerDataGetResponse, error)
 }
 
 type SavePlayerDataHandler interface {

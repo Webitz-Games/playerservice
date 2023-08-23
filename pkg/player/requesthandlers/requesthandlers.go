@@ -135,13 +135,13 @@ func (p PlayerServiceRequestHandlers) getPlayerInternal(email string) (api.Playe
 	return result, nil
 }
 
-func (p PlayerServiceRequestHandlers) GetPlayerData(playerDataRequest api.PlayerDataRequest) (api.PlayerDataResponse, error) {
+func (p PlayerServiceRequestHandlers) GetPlayerData(playerDataRequest api.PlayerDataGetRequest) (api.PlayerDataGetResponse, error) {
 	sessionInfo, err := p.session.GetSession(playerDataRequest.SessionID)
 	if err != nil {
-		return api.PlayerDataResponse{}, err
+		return api.PlayerDataGetResponse{}, err
 	}
 	if sessionInfo.PlayerID != playerDataRequest.PlayerID {
-		return api.PlayerDataResponse{}, errors.New("failed to retrieve player data")
+		return api.PlayerDataGetResponse{}, errors.New("failed to retrieve player data")
 	}
 
 	var player api.Player
@@ -150,11 +150,13 @@ func (p PlayerServiceRequestHandlers) GetPlayerData(playerDataRequest api.Player
 	err = singleResult.Decode(&player)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return api.PlayerDataResponse{}, err
+			return api.PlayerDataGetResponse{}, err
 		}
 	}
 
-	resp := api.PlayerDataResponse{
+	logrus.Info(player)
+
+	resp := api.PlayerDataGetResponse{
 		Data: player.Data,
 	}
 
@@ -170,12 +172,9 @@ func (p PlayerServiceRequestHandlers) SavePlayerData(data api.PlayerSaveDataRequ
 		return errors.New("failed to retrieve player data")
 	}
 
-	//opts := options.Update().SetUpsert(false)
-	//filter := bson.D{{Key: "_id", Value: player.PlayerID}}
-	//update := bson.D{{Key: "$set", Value: player}}
 	opts := options.Update().SetUpsert(false)
 	updateFilter := bson.D{{Key: "_id", Value: sessionInfo.PlayerID}}
-	update := bson.D{{Key: "$set", Value: data}}
+	update := bson.D{{Key: "$set", Value: bson.M{"data": data.Data}}}
 	_, err = p.mongoClient.Database(p.config.MongoDatabase).Collection(playerCollectionPrefix).UpdateOne(context.Background(), updateFilter, update, opts)
 	if err != nil {
 		return err

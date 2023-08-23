@@ -20,7 +20,7 @@ func addPlayerSaveDataRoute(webservice *restful.WebService, handler SavePlayerDa
 			Notes(heredoc.Doc(`
 			Get data associated with the user
 		`)).
-			Reads(PlayerDataRequest{}).
+			Reads(PlayerSaveDataRequest{}).
 			Returns(http.StatusCreated, http.StatusText(http.StatusCreated), nil).
 			Returns(http.StatusBadRequest, http.StatusText(http.StatusBadRequest), response.Error{}))
 }
