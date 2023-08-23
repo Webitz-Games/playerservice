@@ -11,34 +11,27 @@ import (
 	"playerapi/pkg/response"
 )
 
-func addPlayerUpdateRoute(webservice *restful.WebService, handler UpdatePlayerHandler) {
+func addPlayerSaveDataRoute(webservice *restful.WebService, handler SavePlayerDataHandler) {
 	webservice.
-		Route(webservice.PUT(playerRoutePath+"/player"+"{"+playerID+"}").
-			Param(webservice.
-				PathParameter(playerID, "PlayerID of the player").
-				DataType("string").Required(true)).
-			To(bindUpdatePlayerHandler(handler)).
-			Operation("UpdatePlayer").
-			Doc("Update a Player").
+		Route(webservice.POST(playerRoutePath+"/player/data").
+			To(bindPlayerSaveDataRoute(handler)).
+			Operation("PlayerData").
+			Doc("Get Data of a Player").
 			Notes(heredoc.Doc(`
-				Updates a Player
-			`)).
-			Reads(Player{}).
-			Returns(http.StatusCreated, http.StatusText(http.StatusCreated), Player{}).
-			Returns(http.StatusBadRequest, http.StatusText(http.StatusBadRequest), response.Error{}).
-			Returns(http.StatusNotFound, http.StatusText(http.StatusForbidden), response.Error{}).
-			Returns(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), response.Error{}))
+			Get data associated with the user
+		`)).
+			Reads(PlayerDataRequest{}).
+			Returns(http.StatusCreated, http.StatusText(http.StatusCreated), nil).
+			Returns(http.StatusBadRequest, http.StatusText(http.StatusBadRequest), response.Error{}))
 }
 
-func bindUpdatePlayerHandler(handler UpdatePlayerHandler) restful.RouteFunction {
+func bindPlayerSaveDataRoute(handler SavePlayerDataHandler) restful.RouteFunction {
 	return func(req *restful.Request, resp *restful.Response) {
-		action := constants.ActionUpdatePlayer
+		action := constants.ActionSavePlayerData
 		additionalMessage := make(map[string]string)
-		var player Player
 
-		playerID := req.PathParameter(playerID)
-
-		err := req.ReadEntity(&player)
+		var saveRequest PlayerSaveDataRequest
+		err := req.ReadEntity(&saveRequest)
 		if err != nil {
 			errorCode := appmessage.EIDUnableToParseRequestBody
 			errorMessage := response.ConstructErrorMessage(action, constants.ErrorCodeMapping[errorCode], additionalMessage)
@@ -47,8 +40,7 @@ func bindUpdatePlayerHandler(handler UpdatePlayerHandler) restful.RouteFunction 
 			return
 		}
 
-		player.PlayerID = playerID
-		err = player.Validate()
+		err = saveRequest.Validate()
 		if err != nil {
 			errorCode := appmessage.EIDValidationError
 			errorMessage := response.ConstructErrorMessage(action, constants.ErrorCodeMapping[errorCode], additionalMessage)
@@ -57,15 +49,15 @@ func bindUpdatePlayerHandler(handler UpdatePlayerHandler) restful.RouteFunction 
 			return
 		}
 
-		err = handler.HandleUpdatePlayer(player)
+		err = handler.SavePlayerData(saveRequest)
 		if err != nil {
-			var notFoundErr *ErrNotFound
+			var conflictErr *ErrResourceConflict
 			switch {
-			case errors.As(err, &notFoundErr):
-				errorCode := appmessage.EIDUserNotFound
+			case errors.As(err, &conflictErr):
+				errorCode := appmessage.EIDValidationError
 				errorMessage := response.ConstructErrorMessage(action, constants.ErrorCodeMapping[errorCode], additionalMessage)
 				logrus.Error(errorMessage)
-				response.RespondError(req, resp, errorCode, http.StatusNotFound, action, additionalMessage, err)
+				response.RespondError(req, resp, errorCode, http.StatusConflict, action, additionalMessage, err)
 				return
 			default:
 				errorCode := appmessage.EIDInternalServerError
@@ -75,6 +67,7 @@ func bindUpdatePlayerHandler(handler UpdatePlayerHandler) restful.RouteFunction 
 				return
 			}
 		}
-		response.Write(req, resp, http.StatusOK, appmessage.EIDCreatePlayerSuccess, "updated player")
+		response.Write(req, resp, http.StatusOK, appmessage.EIDGetPlayerSuccess, "player data saved")
+
 	}
 }

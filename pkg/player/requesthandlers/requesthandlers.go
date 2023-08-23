@@ -91,7 +91,7 @@ func (p PlayerServiceRequestHandlers) HandleDeletePlayer(playerID string) error 
 }
 
 func (p PlayerServiceRequestHandlers) HandlePlayerLogin(loginRequest api.PlayerLoginRequest) (api.PlayerLoginResponse, error) {
-	player, err := p.getPlayer(loginRequest.Email)
+	player, err := p.getPlayerInternal(loginRequest.Email)
 	if err != nil {
 		return api.PlayerLoginResponse{}, err
 	}
@@ -120,7 +120,7 @@ func (p PlayerServiceRequestHandlers) HandlePlayerLogin(loginRequest api.PlayerL
 	return response, nil
 }
 
-func (p PlayerServiceRequestHandlers) getPlayer(email string) (api.Player, error) {
+func (p PlayerServiceRequestHandlers) getPlayerInternal(email string) (api.Player, error) {
 	var result api.Player
 	filter := bson.D{{"email", email}}
 	singleResult := p.mongoClient.Database(p.config.MongoDatabase).Collection(playerCollectionPrefix).FindOne(context.Background(), filter)
@@ -133,4 +133,53 @@ func (p PlayerServiceRequestHandlers) getPlayer(email string) (api.Player, error
 	}
 
 	return result, nil
+}
+
+func (p PlayerServiceRequestHandlers) GetPlayerData(playerDataRequest api.PlayerDataRequest) (api.PlayerDataResponse, error) {
+	sessionInfo, err := p.session.GetSession(playerDataRequest.SessionID)
+	if err != nil {
+		return api.PlayerDataResponse{}, err
+	}
+	if sessionInfo.PlayerID != playerDataRequest.PlayerID {
+		return api.PlayerDataResponse{}, errors.New("failed to retrieve player data")
+	}
+
+	var player api.Player
+	filter := bson.D{{Key: "_id", Value: sessionInfo.PlayerID}}
+	singleResult := p.mongoClient.Database(p.config.MongoDatabase).Collection(playerCollectionPrefix).FindOne(context.Background(), filter)
+	err = singleResult.Decode(&player)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return api.PlayerDataResponse{}, err
+		}
+	}
+
+	resp := api.PlayerDataResponse{
+		Data: player.Data,
+	}
+
+	return resp, nil
+}
+
+func (p PlayerServiceRequestHandlers) SavePlayerData(data api.PlayerSaveDataRequest) error {
+	sessionInfo, err := p.session.GetSession(data.SessionID)
+	if err != nil {
+		return err
+	}
+	if sessionInfo.PlayerID != data.PlayerID {
+		return errors.New("failed to retrieve player data")
+	}
+
+	//opts := options.Update().SetUpsert(false)
+	//filter := bson.D{{Key: "_id", Value: player.PlayerID}}
+	//update := bson.D{{Key: "$set", Value: player}}
+	opts := options.Update().SetUpsert(false)
+	updateFilter := bson.D{{Key: "_id", Value: sessionInfo.PlayerID}}
+	update := bson.D{{Key: "$set", Value: data}}
+	_, err = p.mongoClient.Database(p.config.MongoDatabase).Collection(playerCollectionPrefix).UpdateOne(context.Background(), updateFilter, update, opts)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

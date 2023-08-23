@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"playerapi/pkg/config"
 	"playerapi/pkg/player/api"
@@ -44,4 +45,27 @@ func (s *SessionService) CreateSession(player api.Player) (string, error) {
 	}
 
 	return session.SessionID, nil
+}
+
+func (s *SessionService) GetSession(sessionID string) (Session, error) {
+	var session Session
+	filter := bson.D{{Key: "_id", Value: sessionID}}
+	result := s.mongoClient.Database(s.config.MongoDatabase).Collection(sessionCollectionPrefix).FindOne(context.Background(), filter)
+	err := result.Decode(&session)
+	if err != nil {
+		return Session{}, err
+	}
+
+	if !s.ValidSession(session.ExpirationTime) {
+		return Session{}, errors.New("session is expired")
+	}
+
+	return session, nil
+}
+
+func (s *SessionService) ValidSession(sessionExpiration time.Time) bool {
+	if sessionExpiration.Before(time.Now()) {
+		return false
+	}
+	return true
 }

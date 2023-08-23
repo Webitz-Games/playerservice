@@ -13,7 +13,7 @@ import (
 
 func addPlayerLoginRoute(webservice *restful.WebService, handler LoginPlayerHandler) {
 	webservice.
-		Route(webservice.POST(playerRoutePath+"/{"+playerPathParameter+"}/{"+loginPathParameter+"}").
+		Route(webservice.POST(playerRoutePath+"/player/login").
 			To(bindLoginPlayerHandler(handler)).
 			Operation("LoginPlayer").
 			Doc("Login a player").

@@ -6,6 +6,8 @@ const (
 	ActionDeletePlayer    = "delete_player"
 	ActionUpdatePlayer    = "update_player"
 	ActionLoginPlayer     = "login_player"
+	ActionGetPlayerData   = "get_player_data"
+	ActionSavePlayerData  = "save_player_data"
 	UnableToWriteResponse = 99
 
 	InternalServerError         = 20000
