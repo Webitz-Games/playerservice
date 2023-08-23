@@ -2,6 +2,8 @@ package requesthandlers
 
 import (
 	"context"
+	"crypto/sha256"
+	"errors"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -38,7 +40,11 @@ func (p PlayerServiceRequestHandlers) HandleCreatePlayer(playerCreateRequest api
 			newPlayer.PlayerID = utils.GenerateUUID()
 			newPlayer.PlayerName = playerCreateRequest.PlayerName
 			newPlayer.Email = playerCreateRequest.Email
-			newPlayer.Password = playerCreateRequest.Password
+			pass, err := sha256.New().Write([]byte(playerCreateRequest.Password))
+			if err != nil {
+				return api.PlayerCreateResponse{}, errors.New("could not create user")
+			}
+			newPlayer.Password = pass
 			_, err = p.mongoClient.Database(p.config.MongoDatabase).Collection(playerCollectionPrefix).InsertOne(context.Background(), newPlayer)
 			logrus.WithField("id", newPlayer.PlayerID).Info("player created")
 			playerResponse.PlayerID = newPlayer.PlayerID
@@ -85,14 +91,17 @@ func (p PlayerServiceRequestHandlers) HandleDeletePlayer(playerID string) error 
 }
 
 func (p PlayerServiceRequestHandlers) HandlePlayerLogin(loginRequest api.PlayerLoginRequest) (api.PlayerLoginResponse, error) {
-	var response api.PlayerLoginResponse
 	player, err := p.getPlayer(loginRequest.Email)
 	if err != nil {
-		return response, err
+		return api.PlayerLoginResponse{}, err
 	}
 
-	if player.Password != loginRequest.Password {
-		return response, api.NewInvalidErr("password did not match")
+	passHash, err := sha256.New().Write([]byte(loginRequest.Password))
+	if err != nil {
+		return api.PlayerLoginResponse{}, err
+	}
+	if player.Password != passHash {
+		return api.PlayerLoginResponse{}, api.NewInvalidErr("password did not match")
 	}
 
 	sessionID, err := p.session.CreateSession(player)
@@ -100,8 +109,13 @@ func (p PlayerServiceRequestHandlers) HandlePlayerLogin(loginRequest api.PlayerL
 		return api.PlayerLoginResponse{}, err
 	}
 
-	player.SessionID = sessionID
-	response.Player = player
+	if player.PlayerID == "" {
+		return api.PlayerLoginResponse{}, errors.New("failed to login, player id is empty")
+	}
+	response := api.PlayerLoginResponse{
+		SessionID: sessionID,
+		PlayerID:  player.PlayerID,
+	}
 
 	return response, nil
 }

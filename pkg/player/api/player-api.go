@@ -14,14 +14,15 @@ type PlayerLoginRequest struct {
 }
 
 type PlayerLoginResponse struct {
-	Player Player
+	SessionID string
+	PlayerID  string
 }
 
 type Player struct {
 	PlayerID   string `bson:"_id"`
 	PlayerName string `json:"name"`
 	Email      string `json:"email"`
-	Password   string `json:"password"`
+	Password   int    `json:"password"`
 	SessionID  string `json:"sessionID"`
 }
 

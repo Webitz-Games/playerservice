@@ -43,7 +43,5 @@ func (s *SessionService) CreateSession(player api.Player) (string, error) {
 		return "", errors.New(fmt.Sprintf("failed to create session for player %s", err))
 	}
 
-	player.SessionID = session.SessionID
-
 	return session.SessionID, nil
 }
