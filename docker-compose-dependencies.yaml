@@ -1,5 +1,12 @@
 version: '3'
 services:
+  app:
+    container_name: player-service-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
   mongo:
     image: mongo:5
     command: "--bind_ip_all --replSet rs0"
