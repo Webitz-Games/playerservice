@@ -10,7 +10,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-         g o-version: '1.21.x'
+         go -version: '1.21.x'
       - name: Install Dependencies
         run: go get .
       - name: Build
