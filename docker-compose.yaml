@@ -7,10 +7,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+    environment:
+      MONGO_URL: mongodb://mongo:27017
   mongo:
     image: mongo:5
     command: "--bind_ip_all --replSet rs0"
-    hostname: 127.0.0.1 # needed to connect from local dev machine when running with a replica set
     restart: always
     ports:
       - 27017:27017

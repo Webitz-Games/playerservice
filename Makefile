@@ -1,2 +1,2 @@
 dev:
-	docker-compose -f docker-compose-dependencies.yaml up
+	docker-compose -f docker-compose.yaml up
