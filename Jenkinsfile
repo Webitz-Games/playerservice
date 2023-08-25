@@ -18,7 +18,7 @@ pipeline {
         stage('Build') {
             steps {
                 script{
-                 app = docker.build("player-service-api")
+                 app = docker.build("$env.registry")
                 }
             }
         }
