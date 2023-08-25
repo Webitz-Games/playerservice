@@ -1,33 +1,29 @@
 pipeline {
+
     agent any
-        environment {
-            registry = "931654140464.dkr.ecr.us-east-1.amazonaws.com/player_service_api"
-        }
-    options {
-        skipStagesAfterUnstable()
+
+    environment {
+        registry = "931654140464.dkr.ecr.us-east-1.amazonaws.com/player_service_api"
     }
     stages {
-         stage('Clone repository') {
-            steps {
-                script{
-                checkout scm
-                }
-            }
-        }
 
-        stage('Build') {
+        stage ('Checkout') {
             steps {
-                script{
-                 app = docker.build("$env.registry")
+                checkout scm
+            }
+        }
+        stage ('Docker Build') {
+            steps {
+                script {
+                    dockerImage = docker.build("${env.registry}")
                 }
             }
         }
-        stage('Deploy') {
+        stage ("Docker Push") {
             steps {
-                script{
+                script {
                     sh 'aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 931654140464.dkr.ecr.us-east-1.amazonaws.com'
                     sh 'docker push 931654140464.dkr.ecr.us-east-1.amazonaws.com/player_service_api:latest'
-                    }
                 }
             }
         }
