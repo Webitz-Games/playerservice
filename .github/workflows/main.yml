@@ -3,6 +3,13 @@ name: Deploy to ECR
 on:
   push:
     branches: [main]
+
+env:
+  ECS_TASK_DEFINITION: .aws/td.json
+  CONTAINER_NAME: player-api
+  ECS_SERVICE: player-service
+  ECS_CLUSTER: ZachProd
+
 jobs:
   build:
     name: Build Image
@@ -20,10 +27,12 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
       - name: Build, tag, and push image to Amazon ECR
+        id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: player_service_api
-          IMAGE_TAG: player_service_api_image
+          IMAGE_TAG: ${{ steps.tag-number.outputs.tag }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
