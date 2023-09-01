@@ -52,6 +52,7 @@ func (p PlayerServiceRequestHandlers) HandleCreatePlayer(playerCreateRequest api
 		}
 	}
 	logrus.WithField("email", playerCreateRequest.Email).Warning("failed to create player because an email already exists")
+	logrus.Error(err)
 	return playerResponse, api.ErrConflict
 }
 
